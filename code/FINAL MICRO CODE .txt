@@ -1,0 +1,670 @@
+.DATA 
+
+; Store the values of the ports
+	PORTA_VAL DB 0
+    PORTB_VAL DB 0
+    PORTC_VAL DB 0  
+    
+;ENTRIES STRING ON LCD
+
+    MYSTR   DB "welcome grade$"   
+    MYSTR1  DB "finder$"      
+    TRY_STR DB "PLEASE TRY AGAIN$"  
+    ENTER1  DB "Please enter ID$" 
+    ENTER2  DB "from 1 to 9$"
+    
+    STR1 DB "MARWAN: 19/20$"
+    STR2 DB "HISHAM: 18/20$"
+    STR3 DB "MOSAAB: 20/20$"
+    STR4 DB "FARIDA: 16/20$"
+    STR5 DB "OMAR: 15/20$"
+    STR6 DB "HANAH: 18/20$"
+    STR7 DB "AMR: 16/20$"
+    STR8 DB "MOHAMED: 10/20$" 
+    STR9 DB "AHMED: 14/20$"  
+    
+;ADDRESS OF THE PORT 
+    PA EQU 00H 	
+	PB EQU 02H 	    ; VARIOUS PORT ADDRESSES 
+	PC EQU 04H                    
+	
+	CWR   EQU 06H	; ADDRESS CONFIGURATION OF  8255                 
+    NUM DW 0                                                               
+    BD DB 0         ; BUTTON STATE
+    NFK DW 0        ; ENTER NUMBER FROM KEYBOARD 
+
+.STACK 100H 
+
+;****************************************************************************
+.CODE
+ 
+PROC MAIN
+; data return 
+    MOV AX, @DATA
+    MOV DS, AX
+    MOV ES, AX  
+
+    
+;config port
+    MOV DX,CWR
+    MOV AL,88H   ;PORTA, PORTB, PORT C LOWER are OUTPUPT, PORTC UPPER is an INPUT
+    OUT DX,AL  
+
+	                                                                                
+; ***********************LCD INITIALIZATION START UP 1  *****************************                                                 
+	
+    CALL LCD_INIT	
+	MOV DL,1   ; SET ROW
+	MOV DH,3   ; SET COL 
+	CALL LCD_SET_CUR     	
+	LEA SI,MYSTR    
+	CALL LCD_WRITE_STR
+
+	MOV DL,2 
+	MOV DH, 6 
+	CALL LCD_SET_CUR  
+	LEA SI,MYSTR1
+	CALL LCD_WRITE_STR
+	
+    MOV CX, 60000
+    CALL DELAY    
+    
+    MOV CX, 60000
+    CALL DELAY   
+    CALL LCD_CLEAR 
+
+; *********************LCD INITIALIZATION START UP 2  *******************************   
+    
+    CALL LCD_INIT	
+	MOV DL,1   ; SET ROW
+	MOV DH,2   ; SET COL 
+	CALL LCD_SET_CUR     	
+	LEA SI,ENTER1    
+	CALL LCD_WRITE_STR
+
+	
+	MOV DL,2 
+	MOV DH, 6 
+	CALL LCD_SET_CUR  
+	LEA SI,ENTER2
+	CALL LCD_WRITE_STR
+	
+
+    MOV CX, 60000
+    CALL DELAY    
+    
+    MOV CX, 60000
+    CALL DELAY   
+    CALL LCD_CLEAR  
+      
+        
+;******************************************************************************* 
+    ;*********************************;
+    ;        CHECK FIRST ROW          ;
+    ;                                 ;
+    ;*********************************;       
+
+N1: 
+
+    MOV AL, 11111011b
+    OUT PC, AL
+    MOV CX, 250
+    CALL DELAY 
+
+    IN AL,PC    ;  PORTC
+    
+;************ CHECK BUTTONS *************   
+
+    CMP AL, 11101011b ; CHECK IF YOU RECEIVE NUMBER 1
+    JNE N2
+        
+        MOV CX, 10000
+        CALL DELAY   
+        CALL LCD_CLEAR
+            
+        CMP BD, 1
+        JE  N1
+        
+        LEA SI,STR1
+        CALL LCD_WRITE_STR  
+
+        
+        MOV NFK, 1
+        MOV BD, 1
+        
+        JMP INPUT_NUM   
+; NOW IF YOU DO NOT RECEIVE 1 SO JMP   
+N2:
+    CMP AL, 11011011b ; CHECK FOR 2
+    JNE N3  
+
+        MOV CX, 10000
+        CALL DELAY   
+        CALL LCD_CLEAR
+        
+        CMP BD, 1
+        JE  N1
+        
+        LEA SI,STR2
+        CALL LCD_WRITE_STR
+
+        
+        MOV NFK, 2
+        MOV BD, 1
+        JMP INPUT_NUM
+           
+; NOW IF YOU DO NOT RECEIVE 2 SO JMP      
+N3:
+    CMP AL, 10111011b ; CHECK FOR 3
+    JNE N4
+        
+        MOV CX, 10000
+        CALL DELAY   
+        CALL LCD_CLEAR
+                
+        
+        CMP BD, 1
+        JE  N1
+        
+        LEA SI,STR3
+        CALL LCD_WRITE_STR
+
+           
+        MOV NFK, 3
+        MOV BD, 1
+        JMP INPUT_NUM   
+      
+    ;*********************************;
+    ;       CHECK SECOND ROW          ;
+    ;                                 ;
+    ;*********************************;       
+     
+N4: 
+
+    MOV AL, 11111101b
+    OUT PC, AL
+    MOV CX, 250
+    CALL DELAY 
+
+    IN AL,PC    ; PORTC
+    
+
+    CMP AL, 11101101b ;CHECK FOR NUM 4
+    JNE N5  
+       
+        MOV CX, 10000
+        CALL DELAY   
+        CALL LCD_CLEAR       
+        
+        CMP BD, 1
+        JE  N1
+        
+        LEA SI,STR4
+        CALL LCD_WRITE_STR  
+
+        
+        MOV NFK, 4
+        MOV BD, 1
+        JMP INPUT_NUM   
+; JUMP HERE IF YOU DIDN'T GET NUMBER 4   
+N5:
+    CMP AL, 11011101b ; CHECK FOR NUM 5
+    JNE N6
+        MOV CX, 10000
+        CALL DELAY   
+        CALL LCD_CLEAR
+        
+        CMP BD, 1
+        JE  N1
+        
+        LEA SI,STR5
+        CALL LCD_WRITE_STR
+
+        
+        MOV NFK, 5
+        MOV BD, 1  
+        JMP INPUT_NUM    
+         
+           
+; JUMP HERE IF YOU DIDN'T GET NUMBER 5     
+N6:
+    CMP AL, 10111101b ; CHECK FOR 6
+    JNE N7
+        MOV CX, 10000
+        CALL DELAY   
+        CALL LCD_CLEAR
+        
+        CMP BD, 1
+        JE  N1
+        
+        LEA SI,STR6
+        CALL LCD_WRITE_STR
+
+        
+        MOV NFK, 6
+        MOV BD, 1
+        JMP INPUT_NUM  
+; JUMP HERE IF YOU DIDN'T GET NUMBER 6       
+        
+    ;**********************************
+    ;       CHECK THIRD ROW           ;
+    ;                                 ;
+    ;**********************************    
+         
+N7: 
+    MOV AL, 11111110B
+    OUT PC, AL
+    MOV CX, 250
+    CALL DELAY 
+
+    IN AL,PC    ;PORTC
+ 
+    CMP AL, 11101110b ; CHECK FOR NUM 7
+    JNE N8
+        MOV CX, 10000
+        CALL DELAY   
+        CALL LCD_CLEAR 
+        
+        CMP BD, 1
+        JE  N1
+        
+            LEA SI,STR7
+            CALL LCD_WRITE_STR 
+            MOV NFK, 7
+            MOV BD, 1  
+            JMP INPUT_NUM   
+; JUMP HERE IF YOU DIDN'T GET NUMBER 7   
+N8:
+    CMP AL, 11011110b ; CHECK FOR NUM 8
+    JNE N9   
+        MOV CX, 10000
+        CALL DELAY   
+        CALL LCD_CLEAR
+        
+        CMP BD, 1
+        JE  N1
+        
+            LEA SI,STR8
+            CALL LCD_WRITE_STR
+
+            
+            MOV NFK, 8
+            MOV BD, 1
+            JMP INPUT_NUM
+           
+; JUMP HERE IF YOU DIDN'T GET NUMBER  8     
+N9:
+    CMP AL, 10111110b ; CHECK FOR NUM 9 
+    JNE ROW4  
+        MOV CX, 10000
+        CALL DELAY   
+        CALL LCD_CLEAR
+             
+        CMP BD, 1
+        JE  N1
+        
+            LEA SI,STR9
+            CALL LCD_WRITE_STR 
+
+            
+            MOV NFK, 9
+            MOV BD, 1
+            JMP INPUT_NUM
+          
+    ;*********************************;
+    ;            FOURTH ROW           ;
+    ;                                 ;
+    ;*********************************;  
+ROW4: 
+
+    MOV AL, 11110111b
+    OUT PC, AL
+    MOV CX, 250
+    CALL DELAY 
+
+    IN AL,PC    ;  PORTC
+    
+    
+    ;*********  
+    CMP AL, 11100111b ;CHECK IF YOU ACCEPT C
+    JNE WRONG_ID 
+    
+        C:
+    
+        CALL LCD_CLEAR           
+        
+        ; RESET
+        MOV NUM, 0 
+        MOV NFK, 0       
+        MOV BD, 1          
+        JMP N1    
+            
+WRONG_ID:
+    CMP AL, 11010111b ;  0
+    JNE START_1  
+    
+        CMP BD, 1
+        JE  N1
+        
+            LEA SI, TRY_STR
+            CALL LCD_WRITE_STR
+            
+            MOV NFK, 0
+            MOV BD, 1
+            JMP INPUT_NUM
+               
+START_1: 
+    
+    MOV BD, 0 
+    JMP N1  
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                           ;
+                                           ;
+; HANDLING FUNCTION WHEN ENTERING WORDS    ;  
+                                           ;
+HANDLING:                                  ;       
+                                           ;
+    MOV DL,2   ; SET ROW                   ;
+	MOV DH,1   ; SET COL                   ;
+	                                       ;
+	CALL LCD_SET_CUR     	               ;
+                                           ;
+	JMP C                                  ;
+                                           ;
+                                           ;
+;*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*
+;                                          ;
+;                 INPUT KEY                ;
+;                                          ;
+;*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*
+                                           ;
+INPUT_NUM:                                 ;
+                                           ;
+                                           ;
+    CMP NUM, 0                             ;                                   
+    JNE NOT0N2                             ;
+                                           ;
+        MOV AX, NFK                        ;                               
+        MOV NUM, AX                        ;                               
+        JMP EXITN2                         ;
+                                           ;
+    NOT0N2:                                ;
+                                           ;
+        MOV AX, NUM                        ;
+                                           ;
+        MOV BX, 10                         ;
+                                           ;
+        MUL BX                             ;
+                                           ;
+        ADD AX, NFK                        ;                                
+        MOV NUM, AX                        ;                                
+    EXITN2:                                ;
+        JMP N1                             ;
+                                           ;
+                                           ;
+                                           ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;                                   
+
+HLT  
+ 
+ 
+ENDP MAIN
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                                    ;
+;		LCD function library.        ;
+;                                    ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
+
+PROC DELAY
+	JCXZ @DELAY_END
+	@DEL_LOOP:
+	LOOP @DEL_LOOP	
+	@DELAY_END:
+	RET
+ENDP DELAY
+
+
+
+;LCD INITIALIZATION FUNCTION 
+
+PROC LCD_INIT
+ 
+;SET this pins RS,En,RW=0 FOR COMMAND INITIALIZATION
+	MOV AL,0
+	CALL OUT_B  
+	
+; CREATE DELAY 20MS 
+	MOV CX,1000
+	CALL DELAY   
+	
+;RESSET THE CONFIGURATION
+	MOV AH,30H
+	CALL LCD_CMD
+	MOV CX,250
+	CALL DELAY
+	
+	MOV AH,30H
+	CALL LCD_CMD
+	MOV CX,50
+	CALL DELAY
+	
+	MOV AH,30H
+	CALL LCD_CMD
+	MOV CX,500
+	CALL DELAY
+	
+;SET CONFIGURATION FOR LCD
+
+	MOV AH,38H  ; LCD 2 HANG VA 5X7 CHAM
+	CALL LCD_CMD
+	
+	MOV AH,0CH ; CMD DISPLAY ON VA CURSOR OFF
+	CALL LCD_CMD
+	
+	MOV AH,01H ; CLEAR DISPLAY SCREEN
+	CALL LCD_CMD
+	                                           
+	RET	                                       
+ENDP LCD_INIT                              
+                                           
+;************SEND COMMAND TO LCD***************;
+                                               ;
+;FUNCTION TO SEND COMMAND TO LCD               ;
+             ;                                 ;
+PROC LCD_CMD                                   ;
+                                               ;
+                                               ;
+; THE INPUT AH IS THE COMMAND CODES            ;
+                                               ;
+	PUSH DX                                    ;
+	PUSH AX                                    ;
+                                               ;
+; SET RS TO 0 TO WORK IN COMMAND MODE          ;
+                                               ;
+	MOV AL,PORTB_VAL                           ;
+	AND AL,0FDH		;En-RS-RW                  ;
+	CALL OUT_B                                 ;
+	                                           ;
+;set out data pins                             ;
+	MOV AL,AH                                  ;
+	CALL OUT_A                                 ;
+	                                           ;
+;make En=1                                     ;
+	MOV AL,PORTB_VAL                           ;
+	OR	AL,100B		;En-RS-RW                  ;
+	CALL OUT_B                                 ;
+	                                           ;
+;delay 1ms                                     ;
+	MOV CX,50                                  ;
+	CALL DELAY                                 ;
+	                                           ;
+;make En=0                                     ;
+	MOV AL,PORTB_VAL                           ;
+	AND AL,0FBH		;En-RS-RW                  ;
+	CALL OUT_B                                 ;
+	                                           ;
+;delay 1ms                                     ;
+	MOV CX,50                                  ;
+	CALL DELAY                                 ;
+	                                           ;
+;restore registers                             ;
+	POP AX                                     ;
+	POP DX	                                   ;
+	RET                                        ;
+ENDP LCD_CMD                                   ;
+                                               ;                                       
+;***************LCD CLEAR**********************;
+                                               ;
+PROC LCD_CLEAR                                 ;
+	MOV AH,1                                   ;
+	CALL LCD_CMD                               ;
+	RET	                                       ;
+ENDP LCD_CLEAR                                 ;
+                                               ;
+;***************LCD WRITE CHARACTER************;
+                                               ;
+                                               ;
+                                               ;
+PROC LCD_WRITE_CHAR                            ;
+;input: AH                                     ;
+;output: none                                  ;
+                                               ;
+;save registers                                ;
+	PUSH AX                                    ;
+	                                           ;
+; DUA RX  = 1 WORKING WITH DATA RECORDS    ;
+	MOV AL,PORTB_VAL                           ;
+	OR	AL,10B		;EN-RS-RW                  ;
+	CALL OUT_B                                 ;
+	                                           ;
+;DUA DU LIEU KI TU RA PORT A                   ;
+	MOV AL,AH                                  ;
+	CALL OUT_A                                 ;
+; BRING THE FOOT TO A HIGH LEVEL               ;
+                                               ;
+	MOV AL,PORTB_VAL                           ;
+	OR	AL,100B		;EN-RS-RW                  ;
+	CALL OUT_B                                 ;
+	                                           ;
+; GENERATING PULSE 1MS                         ;
+	MOV CX,50                                  ;
+	CALL DELAY                                 ;
+	                                           ;
+; PUT THE INPUT DOWN TO LOW LEVEL              ;
+                                               ;
+	MOV AL,PORTB_VAL                           ;
+	AND	AL,0FBH		;EN-RS-RW                  ;
+	CALL OUT_B                                 ;
+	                                           ;
+;return                                        ;
+	POP AX                                     ;
+	RET	                                       ;
+ENDP LCD_WRITE_CHAR                            ;
+                                               ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;            
+                                                                                 ;
+PROC LCD_WRITE_STR                                                               ;
+;input: ADDRESS OF CHARACTER ARRAY ENDING IN '$'                                 ;
+;output: none                                                                    ;
+                                                                                 ;
+	PUSH SI                                                                      ;
+	PUSH AX                                                                      ;
+	                                                                             ;
+;read and write character                                                        ;
+	@LCD_PRINTSTR_LT:                                                            ;
+		LODSB ;SCAN STRING COMMAND                                               ;
+		                                                                         ;
+		CMP AL,'$'  ; LOOKING FOR HIGHLIGHTS AND FACTS                           ;
+		                                                                         ;
+		JE @LCD_PRINTSTR_EXIT ; IF YOU SEE $ THEN STOP READING THE STRING        ;
+		                                                                         ;
+		MOV AH,AL                                                                ;
+		CALL LCD_WRITE_CHAR	                                                     ;
+	JMP @LCD_PRINTSTR_LT                                                         ;
+	                                                                             ;
+;return                                                                          ;
+	@LCD_PRINTSTR_EXIT:                                                          ;
+	POP AX                                                                       ;
+	POP SI                                                                       ;
+	RET	                                                                         ;
+ENDP LCD_WRITE_STR                                                               ;
+                                                                                 ;
+;********************************************************************************;
+
+;sets the cursor
+PROC LCD_SET_CUR 
+    
+    
+;input: DL=ROW,  DH=COL
+;		DL = 1,  IS THE ABOVE ROW
+;		DL = 2,  IS THE BOTTOM ROW
+;		DH = 1-8 IS THE NUMBER OF COLUMNS RUNNING FROM 1 -> 8
+
+	PUSH AX
+;LCD uses 0 based column index
+	DEC DH
+;select case	
+	CMP DL,1
+	JE	@ROW1
+	CMP DL,2
+	JE	@ROW2
+	JMP @LCD_SET_CUR_END
+	
+;if DL==1 then
+	@ROW1:
+		MOV AH,80H
+	JMP @LCD_SET_CUR_ENDCASE
+	
+;if DL==2 then
+	@ROW2:
+		MOV AH,0C0H
+	JMP @LCD_SET_CUR_ENDCASE
+		
+;execute the command
+	@LCD_SET_CUR_ENDCASE:	
+	ADD AH,DH
+	CALL LCD_CMD
+	
+;exit from procedure
+	@LCD_SET_CUR_END:
+	POP AX
+	RET
+ENDP LCD_SET_CUR
+
+
+
+
+
+; THE TUNNEL SENDS DATA DOWN TO THE PORTS   
+
+PROC OUT_A
+	PUSH DX
+	MOV DX,PA
+	OUT DX,AL
+	MOV PORTA_VAL,AL
+	POP DX
+	RET	
+ENDP OUT_A
+
+
+PROC OUT_B
+
+	PUSH DX
+	MOV DX,PB
+	OUT DX,AL
+	MOV PORTB_VAL,AL
+	POP DX
+	RET
+ENDP OUT_B
+            
+            
+PROC OUT_C
+	PUSH DX
+	MOV DX,PC
+	OUT DX,AL
+	MOV PORTC_VAL,AL
+	POP DX
+	RET
+ENDP OUT_C
